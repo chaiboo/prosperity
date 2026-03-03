@@ -10,6 +10,7 @@ from analysis.causality import count_technique_outcome_edges, get_top_causality_
 from analysis.topics import get_tfidf_keywords, compute_umap_embedding, get_top_keywords_per_doc
 from analysis.lexicon import MARKET_TERMS, MARKET_PATTERN_NAMES, MARKET_PATTERNS
 from analysis.extract import load_extractions
+from analysis.comments import load_comments, add_sentiment, get_topic_model, get_top_terms, get_bigrams
 
 # Group 1: Prosperity (Purple)
 PROSPERITY_COLORS = ["#3A0CA3", "#7209B7", "#CDB4DB"]  # eggplant, medium violet, soft lilac
@@ -82,6 +83,16 @@ def get_data():
         return None
 
 df = get_data()
+
+
+@st.cache_data
+def get_comment_analysis(video_id: str):
+    cdf = load_comments(video_id)
+    if cdf.empty:
+        return None, None
+    cdf = add_sentiment(cdf)
+    topics, cdf = get_topic_model(cdf, n_topics=6)
+    return cdf, topics
 if df is None:
     st.stop()
 
@@ -656,14 +667,10 @@ with tabs[11]:
 **Bigrams:** Two-word phrases by raw count (min 3 occurrences).
         """)
 
-    from analysis.comments import load_comments, add_sentiment, get_topic_model, get_top_terms, get_bigrams
-
-    cdf = load_comments("GA6uE2CPo1I")
-    if cdf.empty:
+    cdf, topics = get_comment_analysis("GA6uE2CPo1I")
+    if cdf is None:
         st.warning("No comments found. Run `python fetch_comments.py GA6uE2CPo1I` first.")
     else:
-        cdf = add_sentiment(cdf)
-
         col1, col2, col3, col4 = st.columns(4)
         with col1:
             st.metric("Comments", len(cdf))
@@ -687,7 +694,6 @@ with tabs[11]:
         st.plotly_chart(fig, width="stretch")
 
         st.subheader("Topics (LDA)")
-        topics, cdf = get_topic_model(cdf, n_topics=6)
         for t in topics:
             st.markdown(f"**Topic {t['topic']}:** {', '.join(t['words'])}")
 
