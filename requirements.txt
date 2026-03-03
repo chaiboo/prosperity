@@ -11,6 +11,9 @@ yt-dlp
 # LLM extraction (run_extraction.py)
 google-genai
 
+# Comment analysis
+vaderSentiment
+
 # Dashboard & NLP analysis
 streamlit>=1.28
 plotly>=5.18
