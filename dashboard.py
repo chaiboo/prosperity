@@ -10,7 +10,6 @@ from analysis.causality import count_technique_outcome_edges, get_top_causality_
 from analysis.topics import get_tfidf_keywords, compute_umap_embedding, get_top_keywords_per_doc
 from analysis.lexicon import MARKET_TERMS, MARKET_PATTERN_NAMES, MARKET_PATTERNS
 from analysis.extract import load_extractions
-from analysis.comments import load_comments, add_sentiment, get_topic_model, get_top_terms, get_bigrams
 
 # Group 1: Prosperity (Purple)
 PROSPERITY_COLORS = ["#3A0CA3", "#7209B7", "#CDB4DB"]  # eggplant, medium violet, soft lilac
@@ -85,14 +84,6 @@ def get_data():
 df = get_data()
 
 
-@st.cache_data
-def get_comment_analysis(video_id: str):
-    cdf = load_comments(video_id)
-    if cdf.empty:
-        return None, None
-    cdf = add_sentiment(cdf)
-    topics, cdf = get_topic_model(cdf, n_topics=6)
-    return cdf, topics
 if df is None:
     st.stop()
 
@@ -123,7 +114,6 @@ tabs = st.tabs([
     "Suffering Framing (LLM)",
     "Topic Map",
     "Sentiment Over Time",
-    "Comment Analysis",
     "Data",
 ])
 
@@ -654,101 +644,6 @@ This is **not** per-1,000 words — it's a raw ratio (typically between −0.001
             st.plotly_chart(fig, width="stretch")
 
 with tabs[11]:
-    st.subheader("Comment Analysis")
-    desc('Sentiment, topics, and key terms from YouTube comments on a Joel Osteen video (<a href="https://www.youtube.com/watch?v=GA6uE2CPo1I" target="_blank">GA6uE2CPo1I</a>).')
-    with st.expander("Methodology"):
-        st.markdown("""
-**Sentiment:** VADER (Valence Aware Dictionary and sEntiment Reasoner), designed for social media text. Compound score ranges from −1 (most negative) to +1 (most positive). Thresholds: ≥0.05 = positive, ≤−0.05 = negative, else neutral.
-
-**Topics:** Latent Dirichlet Allocation (LDA) with 6 topics on a bag-of-words matrix (min 3 occurrences, max 85% doc frequency, English stop words removed).
-
-**Key terms:** TF-IDF on individual comments; top terms by mean TF-IDF score across all comments.
-
-**Bigrams:** Two-word phrases by raw count (min 3 occurrences).
-        """)
-
-    cdf, topics = get_comment_analysis("GA6uE2CPo1I")
-    if cdf is None:
-        st.warning("No comments found. Run `python fetch_comments.py GA6uE2CPo1I` first.")
-    else:
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("Comments", len(cdf))
-        with col2:
-            st.metric("Avg sentiment", f"{cdf['sentiment_compound'].mean():.2f}")
-        with col3:
-            pos_pct = 100 * (cdf["sentiment_label"] == "positive").mean()
-            st.metric("Positive %", f"{pos_pct:.0f}%")
-        with col4:
-            neg_pct = 100 * (cdf["sentiment_label"] == "negative").mean()
-            st.metric("Negative %", f"{neg_pct:.0f}%")
-
-        st.subheader("Sentiment distribution")
-        fig = px.histogram(
-            cdf, x="sentiment_compound", nbins=40,
-            color="sentiment_label",
-            color_discrete_map={"positive": "#2D6A4F", "neutral": "#888888", "negative": "#7209B7"},
-            labels={"sentiment_compound": "VADER compound score", "count": "Comments"},
-        )
-        fig.update_layout(bargap=0.05)
-        st.plotly_chart(fig, width="stretch")
-
-        st.subheader("Topics (LDA)")
-        for t in topics:
-            st.markdown(f"**Topic {t['topic']}:** {', '.join(t['words'])}")
-
-        topic_counts = cdf["dominant_topic"].value_counts().reset_index()
-        topic_counts.columns = ["topic", "comments"]
-        topic_counts["label"] = topic_counts["topic"].apply(
-            lambda i: topics[i]["label"] if i < len(topics) else f"Topic {i}"
-        )
-        fig = px.bar(
-            topic_counts.sort_values("topic"), x="label", y="comments",
-            labels={"label": "Topic", "comments": "Comments"},
-            color_discrete_sequence=["#3A0CA3"],
-        )
-        fig.update_layout(xaxis_tickangle=-30)
-        st.plotly_chart(fig, width="stretch")
-
-        col_l, col_r = st.columns(2)
-        with col_l:
-            st.subheader("Top terms (TF-IDF)")
-            terms = get_top_terms(cdf, top_n=20)
-            term_df = pd.DataFrame(terms, columns=["term", "tfidf"])
-            fig = px.bar(
-                term_df, y="term", x="tfidf", orientation="h",
-                labels={"tfidf": "Mean TF-IDF", "term": ""},
-                color_discrete_sequence=["#3A0CA3"],
-            )
-            fig.update_layout(yaxis=dict(autorange="reversed"))
-            st.plotly_chart(fig, width="stretch")
-
-        with col_r:
-            st.subheader("Top bigrams")
-            bigrams = get_bigrams(cdf, top_n=20)
-            bi_df = pd.DataFrame(bigrams, columns=["bigram", "count"])
-            fig = px.bar(
-                bi_df, y="bigram", x="count", orientation="h",
-                labels={"count": "Count", "bigram": ""},
-                color_discrete_sequence=["#7209B7"],
-            )
-            fig.update_layout(yaxis=dict(autorange="reversed"))
-            st.plotly_chart(fig, width="stretch")
-
-        st.subheader("Most liked comments by sentiment")
-        for label, color in [("positive", "#2D6A4F"), ("negative", "#7209B7"), ("neutral", "#888888")]:
-            subset = cdf[cdf["sentiment_label"] == label].nlargest(3, "likes")
-            if not subset.empty:
-                st.markdown(f"**{label.title()}** (top by likes):")
-                for _, row in subset.iterrows():
-                    st.markdown(
-                        f'<div class="desc-box" style="border-color:{color}; margin-bottom:0.5rem;">'
-                        f'<strong>{row["likes"]} likes</strong> (score: {row["sentiment_compound"]:.2f})<br>'
-                        f'{row["text"][:300]}</div>',
-                        unsafe_allow_html=True,
-                    )
-
-with tabs[12]:
     st.subheader("Raw data")
     desc("Underlying data for each video: channel, title, view count, transcript status, and all computed scores.")
     st.dataframe(df, width="stretch", height=400)
