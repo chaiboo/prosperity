@@ -149,7 +149,7 @@ with tabs[0]:
         marker=dict(line=dict(width=3, color="#1A1A1A")),
     )
     fig.update_layout(margin=dict(t=10, l=10, r=10, b=10))
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
     st.caption(
         "Box area = share of corpus. Joel Osteen's count is lower because most of his "
         "videos have subtitles/captions disabled. A few other channels have 1–2 videos "
@@ -684,7 +684,7 @@ with tabs[11]:
             labels={"sentiment_compound": "VADER compound score", "count": "Comments"},
         )
         fig.update_layout(bargap=0.05)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
         st.subheader("Topics (LDA)")
         topics, cdf = get_topic_model(cdf, n_topics=6)
@@ -702,7 +702,7 @@ with tabs[11]:
             color_discrete_sequence=["#3A0CA3"],
         )
         fig.update_layout(xaxis_tickangle=-30)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
         col_l, col_r = st.columns(2)
         with col_l:
@@ -715,7 +715,7 @@ with tabs[11]:
                 color_discrete_sequence=["#3A0CA3"],
             )
             fig.update_layout(yaxis=dict(autorange="reversed"))
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
         with col_r:
             st.subheader("Top bigrams")
@@ -727,7 +727,7 @@ with tabs[11]:
                 color_discrete_sequence=["#7209B7"],
             )
             fig.update_layout(yaxis=dict(autorange="reversed"))
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
         st.subheader("Most liked comments by sentiment")
         for label, color in [("positive", "#2D6A4F"), ("negative", "#7209B7"), ("neutral", "#888888")]:
