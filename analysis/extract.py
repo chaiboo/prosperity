@@ -128,7 +128,7 @@ SCHEMA_PROMPTS = {
 
 # Gemini free tier limits vary by project; we retry on RESOURCE_EXHAUSTED
 DEFAULT_MODEL = "gemini-2.5-flash"
-RATE_LIMIT_SLEEP = 5
+RATE_LIMIT_SLEEP = 0
 MAX_RETRIES = 5
 
 COMBINED_SYSTEM = """You are a theological discourse analyst. Analyze the following transcript excerpts and extract three types of structured data.
@@ -263,8 +263,8 @@ def extract_all_schemas(
 
     results = {"causality": [], "agency": [], "suffering": []}
 
-    for i in range(0, len(candidates), 40):
-        batch = candidates[i : i + 40]
+    for i in range(0, len(candidates), 80):
+        batch = candidates[i : i + 80]
         user_text = "\n".join(f"[{j+1}] {s}" for j, s in enumerate(batch))
 
         content = _call_with_retry(client, model, user_text, {
