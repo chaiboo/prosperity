@@ -13,10 +13,16 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.decomposition import LatentDirichletAllocation
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
-from analysis.lexicon import (
-    MARKET_TERMS, MARKET_PATTERNS, MARKET_PATTERN_NAMES,
-    INDIVIDUAL_TERMS, CAUSALITY_TECHNIQUE, CAUSALITY_OUTCOME,
-)
+try:
+    from analysis.lexicon import (
+        MARKET_TERMS, MARKET_PATTERNS, MARKET_PATTERN_NAMES,
+        INDIVIDUAL_TERMS, CAUSALITY_TECHNIQUE, CAUSALITY_OUTCOME,
+    )
+except ImportError:
+    from .lexicon import (
+        MARKET_TERMS, MARKET_PATTERNS, MARKET_PATTERN_NAMES,
+        INDIVIDUAL_TERMS, CAUSALITY_TECHNIQUE, CAUSALITY_OUTCOME,
+    )
 
 COMMENTS_DIR = Path("data/comments")
 COMMENT_CLASSIFICATIONS_DIR = Path("data/comments/classified")
